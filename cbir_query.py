@@ -2,12 +2,9 @@
 from __future__ import print_function
 
 import sys
-from cbir.color import Color
-from cbir.daisy import Daisy
 from cbir.DB import Database
 from cbir.edge import Edge
 from cbir.evaluate import infer
-from cbir.gabor import Gabor
 from cbir.HOG import HOG
 from cbir.resnet import ResNetFeat
 from cbir.vggnet import VGGNetFeat
@@ -21,11 +18,8 @@ if __name__ == '__main__':
 
     # methods to use
     methods = {
-        "color": Color,
-        "daisy": Daisy,
         "edge": Edge,
         "hog": HOG,
-        "gabor": Gabor,
         "vgg": VGGNetFeat,
         "resnet": ResNetFeat
     }
