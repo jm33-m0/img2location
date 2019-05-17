@@ -2,13 +2,11 @@
 
 from __future__ import print_function
 
-import os
 
 import numpy as np
 import scipy.misc
 import torch
 import torch.nn as nn
-from six.moves import cPickle
 from torchvision.models.vgg import VGG
 
 from cbir.DB import Database
@@ -50,12 +48,6 @@ depth = 1        # retrieved depth, set to None will count the ap for whole data
 use_gpu = torch.cuda.is_available()
 means = np.array([103.939, 116.779, 123.68]) / 255.
 # mean of three channels in the order of BGR
-
-# cache dir
-cache_dir = 'cache'
-
-if not os.path.exists(cache_dir):
-    os.makedirs(cache_dir)
 
 
 class VGGNet(VGG):
@@ -159,68 +151,51 @@ def make_layers(config, batch_norm=False):
 class VGGNetFeat:
 
     def make_samples(self, db, verbose=True):
-        sample_cache = '{}-{}'.format(VGG_model, pick_layer)
+        if verbose:
+            print("Counting histogram... distance=%s, depth=%s" % (
+                d_type, depth))
 
-        try:
-            samples = cPickle.load(
-                open(os.path.join(cache_dir, sample_cache), "rb", True))
+        vgg_model = VGGNet(requires_grad=False, model=VGG_model)
+        vgg_model.eval()
 
-            for sample in samples:
-                sample['hist'] /= np.sum(sample['hist'])  # normalize
-            cPickle.dump(samples, open(os.path.join(
-                cache_dir, sample_cache), "wb", True))
+        if use_gpu:
+            vgg_model = vgg_model.cuda()
+        samples = []
+        data = db.get_data()
 
-            if verbose:
-                print("Using cache..., config=%s, distance=%s, depth=%s" %
-                      (sample_cache, d_type, depth))
-        except FileNotFoundError:
-            if verbose:
-                print("Counting histogram..., config=%s, distance=%s, depth=%s" % (
-                    sample_cache, d_type, depth))
-
-            vgg_model = VGGNet(requires_grad=False, model=VGG_model)
-            vgg_model.eval()
-
-            if use_gpu:
-                vgg_model = vgg_model.cuda()
-            samples = []
-            data = db.get_data()
-
-            for d in data.itertuples():
-                d_img, d_cls = getattr(d, "img"), getattr(d, "cls")
-                img = scipy.misc.imread(d_img, mode="RGB")
-                img = img[:, :, ::-1]  # switch to BGR
-                img = np.transpose(img, (2, 0, 1)) / 255.
-                img[0] -= means[0]  # reduce B's mean
-                img[1] -= means[1]  # reduce G's mean
-                img[2] -= means[2]  # reduce R's mean
-                img = np.expand_dims(img, axis=0)
-                try:
-                    if use_gpu:
-                        inputs = torch.autograd.Variable(
-                            torch.from_numpy(img).cuda().float())
-                    else:
-                        inputs = torch.autograd.Variable(
-                            torch.from_numpy(img).float())
-                    d_hist = vgg_model(inputs)[pick_layer]
-                    d_hist = np.sum(d_hist.data.cpu().numpy(), axis=0)
-                    d_hist /= np.sum(d_hist)  # normalize
-                    samples.append({
-                        'img':  d_img,
-                        'cls':  d_cls,
-                        'hist': d_hist
-                    })
-                except BaseException:
-                    pass
-            cPickle.dump(samples, open(os.path.join(
-                cache_dir, sample_cache), "wb", True))
+        for d in data.itertuples():
+            d_img, d_cls = getattr(d, "img"), getattr(d, "cls")
+            img = scipy.misc.imread(d_img, mode="RGB")
+            img = img[:, :, ::-1]  # switch to BGR
+            img = np.transpose(img, (2, 0, 1)) / 255.
+            img[0] -= means[0]  # reduce B's mean
+            img[1] -= means[1]  # reduce G's mean
+            img[2] -= means[2]  # reduce R's mean
+            img = np.expand_dims(img, axis=0)
+            try:
+                if use_gpu:
+                    inputs = torch.autograd.Variable(
+                        torch.from_numpy(img).cuda().float())
+                else:
+                    inputs = torch.autograd.Variable(
+                        torch.from_numpy(img).float())
+                d_hist = vgg_model(inputs)[pick_layer]
+                d_hist = np.sum(d_hist.data.cpu().numpy(), axis=0)
+                d_hist /= np.sum(d_hist)  # normalize
+                samples.append({
+                    'img':  d_img,
+                    'cls':  d_cls,
+                    'hist': d_hist
+                })
+            except BaseException:
+                pass
 
         return samples
 
 
-if __name__ == "__main__":
+def main():
     # evaluate database
-    DB = Database()
+    DB = Database("database", "database.csv")
     APs = evaluate_class(DB, f_class=VGGNetFeat, d_type=d_type, depth=depth)
     cls_MAPs = []
 

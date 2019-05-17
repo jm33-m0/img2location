@@ -2,13 +2,12 @@
 
 from __future__ import print_function
 
-import os
+import logging
 
 import numpy as np
 import scipy.misc
 import torch
 import torch.utils.model_zoo as model_zoo
-from six.moves import cPickle
 from torchvision.models.resnet import BasicBlock, Bottleneck, ResNet
 
 from cbir.DB import Database
@@ -51,12 +50,6 @@ depth = 3  # retrieved depth, set to None will count the ap for whole database
 use_gpu = torch.cuda.is_available()
 means = np.array([103.939, 116.779, 123.68]) / \
     255.  # mean of three channels in the order of BGR
-
-# cache dir
-cache_dir = 'cache'
-
-if not os.path.exists(cache_dir):
-    os.makedirs(cache_dir)
 
 
 # from https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
@@ -132,66 +125,53 @@ class ResidualNet(ResNet):
 class ResNetFeat:
 
     def make_samples(self, db, verbose=True):
-        sample_cache = '{}-{}'.format(RES_model, pick_layer)
+        logging.debug("\nDB: %s\n", db.get_data())
 
-        try:
-            samples = cPickle.load(
-                open(os.path.join(cache_dir, sample_cache), "rb", True))
+        if verbose:
+            logging.debug("Counting histogram..., distance=%s, depth=%s",
+                          d_type, depth)
 
-            for sample in samples:
-                sample['hist'] /= np.sum(sample['hist'])  # normalize
+        res_model = ResidualNet(model=RES_model)
+        res_model.eval()
 
-            if verbose:
-                print("Using cache..., config=%s, distance=%s, depth=%s" %
-                      (sample_cache, d_type, depth))
-        except BaseException:
-            if verbose:
-                print("Counting histogram..., config=%s, distance=%s, depth=%s" %
-                      (sample_cache, d_type, depth))
+        if use_gpu:
+            res_model = res_model.cuda()
+        samples = []
+        data = db.get_data()
 
-            res_model = ResidualNet(model=RES_model)
-            res_model.eval()
-
-            if use_gpu:
-                res_model = res_model.cuda()
-            samples = []
-            data = db.get_data()
-
-            for d in data.itertuples():
-                d_img, d_cls = getattr(d, "img"), getattr(d, "cls")
-                img = scipy.misc.imread(d_img, mode="RGB")
-                img = img[:, :, ::-1]  # switch to BGR
-                img = np.transpose(img, (2, 0, 1)) / 255.
-                img[0] -= means[0]  # reduce B's mean
-                img[1] -= means[1]  # reduce G's mean
-                img[2] -= means[2]  # reduce R's mean
-                img = np.expand_dims(img, axis=0)
-                try:
-                    if use_gpu:
-                        inputs = torch.autograd.Variable(
-                            torch.from_numpy(img).cuda().float())
-                    else:
-                        inputs = torch.autograd.Variable(
-                            torch.from_numpy(img).float())
-                    d_hist = res_model(inputs)[pick_layer]
-                    d_hist = d_hist.data.cpu().numpy().flatten()
-                    d_hist /= np.sum(d_hist)  # normalize
-                    samples.append({
-                        'img':  d_img,
-                        'cls':  d_cls,
-                        'hist': d_hist
-                    })
-                except BaseException:
-                    pass
-            cPickle.dump(samples, open(os.path.join(
-                cache_dir, sample_cache), "wb", True))
+        for d in data.itertuples():
+            d_img, d_cls = getattr(d, "img"), getattr(d, "cls")
+            img = scipy.misc.imread(d_img, mode="RGB")
+            img = img[:, :, ::-1]  # switch to BGR
+            img = np.transpose(img, (2, 0, 1)) / 255.
+            img[0] -= means[0]  # reduce B's mean
+            img[1] -= means[1]  # reduce G's mean
+            img[2] -= means[2]  # reduce R's mean
+            img = np.expand_dims(img, axis=0)
+            try:
+                if use_gpu:
+                    inputs = torch.autograd.Variable(
+                        torch.from_numpy(img).cuda().float())
+                else:
+                    inputs = torch.autograd.Variable(
+                        torch.from_numpy(img).float())
+                d_hist = res_model(inputs)[pick_layer]
+                d_hist = d_hist.data.cpu().numpy().flatten()
+                d_hist /= np.sum(d_hist)  # normalize
+                samples.append({
+                    'img':  d_img,
+                    'cls':  d_cls,
+                    'hist': d_hist
+                })
+            except BaseException:
+                pass
 
         return samples
 
 
-if __name__ == "__main__":
+def main():
     # evaluate database
-    DB = Database()
+    DB = Database("database", "database.csv")
     APs = evaluate_class(DB, f_class=ResNetFeat, d_type=d_type, depth=depth)
     cls_MAPs = []
 

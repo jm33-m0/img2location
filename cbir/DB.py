@@ -1,4 +1,4 @@
-# pylint: disable=invalid-name,missing-docstring,exec-used,too-many-arguments,too-few-public-methods,no-self-use
+# pylint: disable=invalid-name,missing-docstring
 
 from __future__ import print_function
 
@@ -6,24 +6,23 @@ import os
 
 import pandas as pd
 
-DB_dir = 'database'
-DB_csv = 'data.csv'
-
 
 class Database:
 
-    def __init__(self):
+    def __init__(self, db_dir, db_csv):
+        self.db_dir = db_dir
+        self.db_csv = db_csv
         self._gen_csv()
-        self.data = pd.read_csv(DB_csv)
+        self.data = pd.read_csv(self.db_csv)
         self.classes = set(self.data["cls"])
 
     def _gen_csv(self):
-        if os.path.exists(DB_csv):
+        if os.path.exists(self.db_csv):
             return
-        with open(DB_csv, 'w', encoding='UTF-8') as f:
+        with open(self.db_csv, 'w', encoding='UTF-8') as f:
             f.write("img,cls")
 
-            for root, _, files in os.walk(DB_dir, topdown=False):
+            for root, _, files in os.walk(self.db_dir, topdown=False):
                 cls = root.split('/')[-1]
 
                 for name in files:
@@ -42,9 +41,10 @@ class Database:
         return self.data
 
 
-if __name__ == "__main__":
-    db = Database()
+def main():
+    db = Database("database", "data.csv")
     data = db.get_data()
+    print(data)
     classes = db.get_class()
 
     print("DB length:", len(db))

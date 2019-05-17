@@ -5,7 +5,7 @@ main script
 import logging
 import sys
 
-from baidu.location2imgs import ImageCollector
+from imgcollector.location2imgs import ImageCollector
 
 LOGLEVEL = logging.WARN
 

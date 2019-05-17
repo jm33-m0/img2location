@@ -2,12 +2,10 @@
 
 from __future__ import print_function
 
-import os
 from math import sqrt
 
 import numpy as np
 import scipy.misc
-from six.moves import cPickle
 
 from cbir.DB import Database
 from cbir.evaluate import evaluate_class
@@ -77,12 +75,6 @@ edge_kernels = np.array([
     ]
 ])
 
-# cache dir
-cache_dir = 'cache'
-
-if not os.path.exists(cache_dir):
-    os.makedirs(cache_dir)
-
 
 class Edge:
 
@@ -122,7 +114,7 @@ class Edge:
 
             for hs in range(len(h_silce)-1):
                 for ws in range(len(w_slice)-1):
-                    img_r = img[h_silce[hs]:h_silce[hs+1], w_slice[ws]                                :w_slice[ws+1]]  # slice img to regions
+                    img_r = img[h_silce[hs]:h_silce[hs+1], w_slice[ws]:w_slice[ws+1]]  # slice img to regions
                     hist[hs][ws] = self._conv(
                         img_r, stride=stride, kernels=edge_kernels)
 
@@ -169,40 +161,27 @@ class Edge:
             sample_cache = "edge-{}-stride{}-n_slice{}".format(
                 h_type, stride, n_slice)
 
-        try:
-            samples = cPickle.load(
-                open(os.path.join(cache_dir, sample_cache), "rb", True))
+        if verbose:
+            print("Counting histogram... distance=%s, depth=%s" %
+                  (d_type, depth))
 
-            for sample in samples:
-                sample['hist'] /= np.sum(sample['hist'])  # normalize
+        samples = []
+        data = db.get_data()
 
-            if verbose:
-                print("Using cache..., config=%s, distance=%s, depth=%s" %
-                      (sample_cache, d_type, depth))
-        except:
-            if verbose:
-                print("Counting histogram..., config=%s, distance=%s, depth=%s" %
-                      (sample_cache, d_type, depth))
-
-            samples = []
-            data = db.get_data()
-
-            for d in data.itertuples():
-                d_img, d_cls = getattr(d, "img"), getattr(d, "cls")
-                d_hist = self.histogram(d_img, type=h_type, n_slice=n_slice)
-                samples.append({
-                    'img':  d_img,
-                    'cls':  d_cls,
-                    'hist': d_hist
-                })
-            cPickle.dump(samples, open(os.path.join(
-                cache_dir, sample_cache), "wb", True))
+        for d in data.itertuples():
+            d_img, d_cls = getattr(d, "img"), getattr(d, "cls")
+            d_hist = self.histogram(d_img, type=h_type, n_slice=n_slice)
+            samples.append({
+                'img':  d_img,
+                'cls':  d_cls,
+                'hist': d_hist
+            })
 
         return samples
 
 
-if __name__ == "__main__":
-    db = Database()
+def main():
+    db = Database("database", "database.csv")
 
     # check shape
     assert edge_kernels.shape == (5, 2, 2)

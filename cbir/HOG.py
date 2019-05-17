@@ -2,11 +2,9 @@
 
 from __future__ import print_function
 
-import os
 
 import numpy as np
 import scipy.misc
-from six.moves import cPickle
 from skimage import color
 from skimage.feature import hog
 
@@ -61,11 +59,6 @@ depth = 5
       HOG-region-n_bin10-n_slice8-n_orient8-ppc(2, 2)-cpb(1, 1), distance=d1, MMAP 0.15347983005
 '''
 
-# cache dir
-cache_dir = 'cache'
-if not os.path.exists(cache_dir):
-    os.makedirs(cache_dir)
-
 
 class HOG:
 
@@ -104,7 +97,7 @@ class HOG:
 
             for hs in range(len(h_silce)-1):
                 for ws in range(len(w_slice)-1):
-                    img_r = img[h_silce[hs]:h_silce[hs+1], w_slice[ws]                                :w_slice[ws+1]]  # slice img to regions
+                    img_r = img[h_silce[hs]:h_silce[hs+1], w_slice[ws]:w_slice[ws+1]]  # slice img to regions
                     hist[hs][ws] = self._HOG(img_r, n_bin)
 
         if normalize:
@@ -132,37 +125,26 @@ class HOG:
             sample_cache = "HOG-{}-n_bin{}-n_slice{}-n_orient{}-ppc{}-cpb{}".format(
                 h_type, n_bin, n_slice, n_orient, p_p_c, c_p_b)
 
-        try:
-            samples = cPickle.load(
-                open(os.path.join(cache_dir, sample_cache), "rb", True))
-            for sample in samples:
-                sample['hist'] /= np.sum(sample['hist'])  # normalize
-            if verbose:
-                print("Using cache..., config=%s, distance=%s, depth=%s" %
-                      (sample_cache, d_type, depth))
-        except:
-            if verbose:
-                print("Counting histogram..., config=%s, distance=%s, depth=%s" %
-                      (sample_cache, d_type, depth))
+        if verbose:
+            print("Counting histogram..., config=%s, distance=%s, depth=%s" %
+                  (sample_cache, d_type, depth))
 
-            samples = []
-            data = db.get_data()
-            for d in data.itertuples():
-                d_img, d_cls = getattr(d, "img"), getattr(d, "cls")
-                d_hist = self.histogram(d_img, type=h_type, n_slice=n_slice)
-                samples.append({
-                    'img':  d_img,
-                    'cls':  d_cls,
-                    'hist': d_hist
-                })
-            cPickle.dump(samples, open(os.path.join(
-                cache_dir, sample_cache), "wb", True))
+        samples = []
+        data = db.get_data()
+        for d in data.itertuples():
+            d_img, d_cls = getattr(d, "img"), getattr(d, "cls")
+            d_hist = self.histogram(d_img, type=h_type, n_slice=n_slice)
+            samples.append({
+                'img':  d_img,
+                'cls':  d_cls,
+                'hist': d_hist
+            })
 
         return samples
 
 
-if __name__ == "__main__":
-    db = Database()
+def main():
+    db = Database("database", "database.csv")
 
     # evaluate database
     APs = evaluate_class(db, f_class=HOG, d_type=d_type, depth=depth)
