@@ -3,12 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 *cache*
-data.csv
 .ycm*
 archive
 google*
 baidu_api.txt
 *.log
+*.csv
 
 # C extensions
 *.so
