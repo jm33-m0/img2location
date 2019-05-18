@@ -2,6 +2,8 @@
 
 find where an image is taken
 
+## result
+
 ```text
 $ .venv/bin/python img2location.py -q 天安门 -r 北京 -v
 [*] Requesting images from baidu map...
@@ -30,3 +32,7 @@ Matching address:
 Matching address:
 0.31151291728019714: 北京市东城区东长安街天安门内
 ```
+
+## acknowledgement
+
+- [pochih/CBIR](https://github.com/pochih/CBIR)
