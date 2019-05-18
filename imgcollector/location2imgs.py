@@ -43,8 +43,9 @@ class ImageCollector:
             name = loc['name']
             poi_id = loc['uid']
             coord = loc['location']
+            addr = loc['address']
 
-            results.update({name: [poi_id, coord]})
+            results.update({name: [poi_id, coord, addr]})
 
         logging.debug("search results:\n%s", results)
         self.location_list = results
@@ -67,8 +68,9 @@ class ImageCollector:
         for loc in result['results']:
             name = loc['name']
             poi_id = loc['uid']
+            addr = loc['address']
 
-            results.update({name: poi_id})
+            results.update({name: [poi_id, addr]})
         logging.debug("nearby_pois:\n%s", results)
 
         return results
@@ -78,11 +80,13 @@ class ImageCollector:
         download imgs for each location
         '''
 
-        for name, poi_id in poi_dict.items():
+        for name, poi in poi_dict.items():
+            poi_id = poi[0]
+            poi_addr = poi[1]
             url = "http://api.map.baidu.com/panorama/v2?ak={}&poiid={}&width=1024&height=512&heading=0&pitch=0&fov=90".format(
                 self.api_key, poi_id)
 
-            img_file = "./database/search/{}.jpg".format(name)
+            img_file = "./database/search/{}---{}.jpg".format(name, poi_addr)
             logging.debug("Downloading image %s to %s", url, img_file)
 
             data = requests.get(url).content
@@ -102,7 +106,7 @@ class ImageCollector:
         '''
         for name, geoinfo in self.location_list.items():
             # image of the central spot itself
-            poi_dict = {name: geoinfo[0]}
+            poi_dict = {name: [geoinfo[0], geoinfo[2]]}
             self.get_img(poi_dict)
 
             # POIs around the central spot

@@ -52,9 +52,12 @@ def main():
     print("[*] CBIR working...")
     result = query.query()
 
-    # TODO deal with CBIR result
+    # deal with CBIR result
     for match in result:
-        pass
+        addr = match['img'].split('---')[1].split('.')[0]
+        diff = match['dis']
+
+        print("\nMatching address:\n{}: {}".format(diff, addr))
 
     os.system("rm -f *.csv")
 
