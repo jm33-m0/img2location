@@ -56,7 +56,7 @@ class ImageCollector:
         '''
         lat = coordinate['lat']
         lng = coordinate['lng']
-        url = "http://api.map.baidu.com/place/v2/search?query=银行$酒店$美食$购物$生活服务$旅游景点$丽人$休闲娱乐$运动健身$教育培训&location={},{}&radius=100&output=json&ak={}".format(
+        url = "http://api.map.baidu.com/place/v2/search?query=银行$酒店$美食$购物$生活服务$旅游景点$丽人$休闲娱乐$运动健身$教育培训&location={},{}&radius=50&output=json&ak={}".format(
             lat, lng, self.api_key)
 
         resp = requests.get(url)
