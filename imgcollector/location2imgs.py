@@ -20,7 +20,7 @@ class ImageCollector:
         logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
                             datefmt='%Y-%m-%d %I:%M:%S %p',
                             level=loglevel,
-                            filename="./baidu.log")
+                            filename="./img2location.log")
         try:
             self.api_key = open("baidu_api.txt").readline().strip()
         except FileNotFoundError:
@@ -46,6 +46,7 @@ class ImageCollector:
 
             results.update({name: [poi_id, coord]})
 
+        logging.debug("search results:\n%s", results)
         self.location_list = results
 
     def nearby_pois(self, coordinate):
@@ -68,6 +69,7 @@ class ImageCollector:
             poi_id = loc['uid']
 
             results.update({name: poi_id})
+        logging.debug("nearby_pois:\n%s", results)
 
         return results
 

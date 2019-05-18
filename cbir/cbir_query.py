@@ -27,12 +27,6 @@ class CbirQuery:
         self.depth = 5
         self.d_type = 'd1'
 
-        if verbose:
-            logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
-                                datefmt='%Y-%m-%d %I:%M:%S %p',
-                                level=logging.DEBUG,
-                                filename="./query.log")
-
         # methods to use
         self.methods = {
             "edge": Edge,
@@ -79,3 +73,5 @@ class CbirQuery:
                 print("{}:\t{},\tClass {}".format(match["img"],
                                                   match["dis"],
                                                   match["cls"]))
+
+        return result
