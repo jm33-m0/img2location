@@ -1,9 +1,9 @@
-# pylint: disable=line-too-long
 '''
 this script takes a query and downloads imgs matching the query
 '''
 
 import logging
+import traceback
 import os
 
 import magic
@@ -30,8 +30,9 @@ class ImageCollector:
         self.query = query
         self.region = region
 
-        url = "http://api.map.baidu.com/place/v2/search?query={}&region={}&scope=2&output=json&ak={}".format(
-            query, region, self.api_key)
+        url = "http://api.map.baidu.com/place/v2/search?" +\
+            "query={}&region={}&scope=2&output=json&ak={}".format(
+                query, region, self.api_key)
 
         resp = requests.get(url)
         result = resp.json()
@@ -56,8 +57,10 @@ class ImageCollector:
         '''
         lat = coordinate['lat']
         lng = coordinate['lng']
-        url = "http://api.map.baidu.com/place/v2/search?query=银行$酒店$美食$购物$生活服务$旅游景点$丽人$休闲娱乐$运动健身$教育培训&location={},{}&radius=50&output=json&ak={}".format(
-            lat, lng, self.api_key)
+        url = "http://api.map.baidu.com/place/v2/search?" +\
+            "query=银行$酒店$美食$购物$生活服务$旅游景点$丽人$休闲娱乐$运动健身$教育培训&" +\
+            "location={},{}&radius=50&output=json&ak={}".format(
+                lat, lng, self.api_key)
 
         resp = requests.get(url)
         result = resp.json()
@@ -83,11 +86,15 @@ class ImageCollector:
         for name, poi in poi_dict.items():
             poi_id = poi[0]
             poi_addr = poi[1]
-            url = "http://api.map.baidu.com/panorama/v2?ak={}&poiid={}&width=1024&height=512&heading=0&pitch=0&fov=90".format(
-                self.api_key, poi_id)
+            url = "http://api.map.baidu.com/panorama/v2?" +\
+                "ak={}&poiid={}&width=1024&height=512&heading=0&pitch=0&fov=90".format(self.api_key,
+                                                                                       poi_id)
 
             img_file = "./database/search/{}---{}.jpg".format(name, poi_addr)
             logging.debug("Downloading image %s to %s", url, img_file)
+            if os.path.isfile(img_file):
+                logging.debug("%s exists, skipping", img_file)
+                continue
 
             data = requests.get(url).content
 
@@ -96,9 +103,12 @@ class ImageCollector:
             if "jpeg" not in magic.from_file(img_file, mime=True).lower():
                 logging.warning("Invalid image file, deleting %s", img_file)
                 try:
+                    logging.debug("File content:\n%s",
+                                  open(img_file, 'r').read())
                     os.remove(img_file)
                 except BaseException:
-                    pass
+                    logging.debug("Removing invalid img: %s",
+                                  traceback.format_exc())
 
     def main(self):
         '''
