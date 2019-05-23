@@ -9,6 +9,7 @@ google*
 baidu_api.txt
 *.log
 *.csv
+database/search
 
 # C extensions
 *.so

@@ -16,12 +16,17 @@ def get_args():
     takes care of args
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument("-q", "--query", help="Query string for baidu map")
-    parser.add_argument("-r", "--region", help="Query region for baidu map")
+    parser.add_argument("-q", "--query", help="Query string for baidu map",
+                        required=True)
+    parser.add_argument("-r", "--region", help="Query region for baidu map",
+                        required=True)
     parser.add_argument("-v", "--verbose",
-                        help="Increase output verbosity", action="store_true")
+                        help="Increase output verbosity", action="store_true",
+                        required=False)
     parser.add_argument("-c", "--cbironly",
-                        help="Do not download new images from baidu map", action="store_true")
+                        help="Do not download new images from baidu map",
+                        action="store_true",
+                        required=False)
 
     return parser.parse_args()
 
@@ -34,6 +39,7 @@ def main():
     verbose = False
 
     args = get_args()
+
     if args.verbose:
         loglevel = logging.DEBUG
         verbose = True

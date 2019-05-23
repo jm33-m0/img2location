@@ -91,7 +91,7 @@ class ImageCollector:
                                                                                        poi_id)
 
             img_file = "./database/search/{}---{}.jpg".format(name, poi_addr)
-            logging.debug("Downloading image %s to %s", url, img_file)
+            logging.warning("Downloading image %s to %s", url, img_file)
             if os.path.isfile(img_file):
                 logging.debug("%s exists, skipping", img_file)
                 continue
