@@ -24,8 +24,7 @@ class ImageCollector:
         try:
             self.api_key = open("baidu_api.txt").readline().strip()
         except FileNotFoundError:
-            logging.error("./baidu_api.txt not found")
-            return
+            logging.fatal("./baidu_api.txt not found")
 
         self.query = query
         self.region = region
