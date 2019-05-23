@@ -10,6 +10,7 @@ baidu_api.txt
 *.log
 *.csv
 database/search
+query/query-demo
 
 # C extensions
 *.so
