@@ -17,7 +17,7 @@ class ImageCollector:
     '''
 
     def __init__(self, query, region, loglevel):
-        logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
+        logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
                             datefmt='%Y-%m-%d %I:%M:%S %p',
                             level=loglevel,
                             filename="./img2location.log")
