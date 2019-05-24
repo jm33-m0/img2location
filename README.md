@@ -12,6 +12,14 @@ basically:
 - street views downloaded from `-q query_string -r region` is put under `database/search`
 - check the log file for details
 
+## FAQ
+
+- Q: why do you need to "query" for street views from baidu map?
+- A: yeah it doesnt make sense, if you already knew what to query, why bother using this tool?. well first, i dont have a beast-like machine for resnet computing, if i downloaded thousands of images and comparing them with my input, im afraid its not possible. second, if there are some store fronts in your picture, you can use them to narrow down query range, which in turn reduces the time cost. anyways, consider this a demo
+
+- Q: baidu map doesnt have much resources to locate my pic
+- A: Google's place photos api might be a good choice too
+
 ## how to make it more useful
 
 yeah it can be pretty useful, for private detectives, or cops, or, stalkers
