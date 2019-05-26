@@ -13,6 +13,9 @@ from torchvision.models.resnet import BasicBlock, Bottleneck, ResNet
 from cbir.DB import Database
 from cbir.evaluate import evaluate_class
 
+# solves too many open files
+torch.multiprocessing.set_sharing_strategy('file_system')
+
 '''
   downloading problem in mac OSX should refer to this answer:
     https://stackoverflow.com/a/42334357
@@ -124,49 +127,82 @@ class ResidualNet(ResNet):
 
 class ResNetFeat:
 
+    def __init__(self):
+        self.res_model = ResidualNet(model=RES_model)
+
     def make_samples(self, db, verbose=True):
         logging.debug("\nDB: %s\n", db.get_data())
 
         if verbose:
-            logging.debug("Counting histogram..., distance=%s, depth=%s",
+            logging.debug("make_samples: Counting histogram..., distance=%s, depth=%s",
                           d_type, depth)
 
-        res_model = ResidualNet(model=RES_model)
+        res_model = self.res_model
         res_model.eval()
 
         if use_gpu:
             res_model = res_model.cuda()
         samples = []
         data = db.get_data()
-
         for d in data.itertuples():
             d_img, d_cls = getattr(d, "img"), getattr(d, "cls")
-            img = scipy.misc.imread(d_img, mode="RGB")
-            img = img[:, :, ::-1]  # switch to BGR
-            img = np.transpose(img, (2, 0, 1)) / 255.
-            img[0] -= means[0]  # reduce B's mean
-            img[1] -= means[1]  # reduce G's mean
-            img[2] -= means[2]  # reduce R's mean
-            img = np.expand_dims(img, axis=0)
-            try:
-                if use_gpu:
-                    inputs = torch.autograd.Variable(
-                        torch.from_numpy(img).cuda().float())
-                else:
-                    inputs = torch.autograd.Variable(
-                        torch.from_numpy(img).float())
-                d_hist = res_model(inputs)[pick_layer]
-                d_hist = d_hist.data.cpu().numpy().flatten()
-                d_hist /= np.sum(d_hist)  # normalize
-                samples.append({
-                    'img':  d_img,
-                    'cls':  d_cls,
-                    'hist': d_hist
-                })
-            except BaseException:
-                pass
+
+            samples.append(self.make_sample(d_img, d_cls))
+        '''
+        logging.debug("arg_list: %s", arg_list)
+
+        pool = torch.multiprocessing.Pool(processes=10)
+        p_result = pool.starmap(self.make_sample, arg_list)
+        pool.close()
+
+        for res in p_result:
+            samples.append(res)
+
+        logging.debug("samples: %s", samples)
+        '''
 
         return samples
+
+    def make_sample(self, d_img, d_cls):
+        '''
+        make one sample
+        '''
+
+        logging.debug("%s:%s", d_img, d_cls)
+
+        res_model = self.res_model
+
+        img = scipy.misc.imread(d_img, mode="RGB")
+        img = img[:, :, ::-1]  # switch to BGR
+        img = np.transpose(img, (2, 0, 1)) / 255.
+        img[0] -= means[0]  # reduce B's mean
+        img[1] -= means[1]  # reduce G's mean
+        img[2] -= means[2]  # reduce R's mean
+        img = np.expand_dims(img, axis=0)
+
+        try:
+            if use_gpu:
+                inputs = torch.autograd.Variable(
+                    torch.from_numpy(img).cuda().float())
+            else:
+                # hangs when using multiprocessing
+                inputs = torch.autograd.Variable(
+                    torch.from_numpy(img).float())
+
+            d_hist = res_model(inputs)[pick_layer]
+            d_hist = d_hist.data.cpu().numpy().flatten()
+            d_hist /= np.sum(d_hist)  # normalize
+
+            ret = {
+                'img':  d_img,
+                'cls':  d_cls,
+                'hist': d_hist
+            }
+        except BaseException:
+            ret = {}
+
+        logging.debug("make_sample:%s", ret)
+        return ret
 
 
 def main():

@@ -2,6 +2,9 @@
 
 from __future__ import print_function
 
+import logging
+from multiprocessing import Pool
+
 import numpy as np
 from scipy import spatial
 
@@ -96,26 +99,44 @@ def infer(query, samples=None, db=None, sample_db_fn=None, depth=None, d_type='d
     if db:
         samples = sample_db_fn(db)
 
-    q_img, q_cls, q_hist = query['img'], query['cls'], query['hist']
     results = []
 
+    # use multi processing
+    arg_list = []
     for _, sample in enumerate(samples):
-        s_img, s_cls, s_hist = sample['img'], sample['cls'], sample['hist']
+        arg = [query, sample, d_type]
+        arg_list.append(arg)
+    pool = Pool(processes=30)
+    p_result = pool.starmap(distance_worker, arg_list)
+    pool.close()
+    logging.debug("\nPOOL: %s\n", p_result)
+    for res in p_result:
+        results.append(res)
 
-        if q_img == s_img:
-            continue
-        results.append({
-            'img': s_img,
-            'dis': distance(q_hist, s_hist, d_type=d_type),
-            'cls': s_cls
-        })
     results = sorted(results, key=lambda x: x['dis'])
+    logging.debug("\nresults list: %s\n", results)
 
     if depth and depth <= len(results):
         results = results[:depth]
-    ap = AP(q_cls, results, sort=False)
+    ap = AP(query['cls'], results, sort=False)
 
     return ap, results
+
+
+def distance_worker(query, sample, d_type):
+    '''
+    comparing two images, get distance
+    '''
+    q_img, q_hist = query['img'], query['hist']
+    s_img, s_cls, s_hist = sample['img'], sample['cls'], sample['hist']
+
+    if q_img == s_img:
+        return {}
+    return {
+        'img': s_img,
+        'dis': distance(q_hist, s_hist, d_type=d_type),
+        'cls': s_cls
+    }
 
 
 def evaluate(db, sample_db_fn, depth=None, d_type='d1'):
