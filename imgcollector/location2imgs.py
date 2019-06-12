@@ -1,3 +1,4 @@
+# pylint: disable=broad-except
 '''
 this script takes a query and downloads imgs matching the query
 '''
