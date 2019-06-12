@@ -1,3 +1,5 @@
+pylint
+autopep8
 requests
 python-magic
 scipy
