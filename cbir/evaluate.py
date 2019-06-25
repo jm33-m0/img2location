@@ -106,7 +106,7 @@ def infer(query, samples=None, db=None, sample_db_fn=None, depth=None, d_type='d
     for _, sample in enumerate(samples):
         arg = [query, sample, d_type]
         arg_list.append(arg)
-    pool = Pool(processes=30)
+    pool = Pool(processes=100)
     p_result = pool.starmap(distance_worker, arg_list)
     pool.close()
     logging.debug("\nPOOL: %s\n", p_result)

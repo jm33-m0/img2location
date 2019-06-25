@@ -5,7 +5,7 @@ from __future__ import print_function
 import logging
 
 import numpy as np
-import scipy.misc
+import imageio
 import torch
 import torch.utils.model_zoo as model_zoo
 from torchvision.models.resnet import BasicBlock, Bottleneck, ResNet
@@ -172,7 +172,8 @@ class ResNetFeat:
 
         res_model = self.res_model
 
-        img = scipy.misc.imread(d_img, mode="RGB")
+        # img = imageio.imread(d_img, mode="RGB")
+        img = imageio.imread(d_img)
         img = img[:, :, ::-1]  # switch to BGR
         img = np.transpose(img, (2, 0, 1)) / 255.
         img[0] -= means[0]  # reduce B's mean
@@ -185,7 +186,6 @@ class ResNetFeat:
                 inputs = torch.autograd.Variable(
                     torch.from_numpy(img).cuda().float())
             else:
-                # hangs when using multiprocessing
                 inputs = torch.autograd.Variable(
                     torch.from_numpy(img).float())
 
