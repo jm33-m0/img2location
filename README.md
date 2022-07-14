@@ -1,36 +1,29 @@
 # img2location
+Intented to find where an image was taken
 
-find where an image is taken
+## Get Started
 
-## how it works
+This is a toy project that uses the ResNet model to compare the input image with selected range of street-view images. This allows to effectively retrieve a possible address of the input image.
 
-this is a toy project, which uses resnet (mostly) to compare your input image with selected range of street view images, effectively get a possible address of the input image.
-
-basically:
-
-- input image looks like `./query/query-class/query.jpg`
-- street views downloaded from `-q query_string -r region` is put under `database/search`
-- check the log file for details
+**Steps**
+- Input image looks like `./query/query-class/query.jpg`
+- Street-views downloaded from `-q query_string -r region` is put under `database/search`
+- Check the log file for details
 
 ## FAQ
+**Q:** Why do you need to "query" for street views from the Baidu map? <br/>
+**A:** Yeah, it doesn't make sense. If you already knew what to query, why bother using this tool?. First, I don't have a beast-like machine for ResNet computing. If I downloaded thousands of images and compared them with my input, then I'm afraid its not possible. Second, if there are some store fronts in your picture, you can use them to narrow down the query range, which reduces the time cost. Anyways, consider this as a demo.<br/>
 
-- Q: why do you need to "query" for street views from baidu map?
-  A: yeah it doesnt make sense, if you already knew what to query, why bother using this tool?. well first, i dont have a beast-like machine for resnet computing, if i downloaded thousands of images and comparing them with my input, im afraid its not possible. second, if there are some store fronts in your picture, you can use them to narrow down query range, which in turn reduces the time cost. anyways, consider this a demo
+**Q:** Baidu map doesn't have much resources to locate my picture. <br/>
+**A:** Google's place photos API might be a good alternative.<br/>
 
-- Q: baidu map doesnt have much resources to locate my pic
-  A: Google's place photos api might be a good choice too
+**Q:** How to make it more useful? <br/>
+**A:** To make it more useful even for private detectives or cops, consider the following. 
+- A huge street view resource (better without downloading). The project has taken care of image caching, in case you didn't know.
+- A GPU server
+- Distributed searching
 
-## how to make it more useful
-
-yeah it can be pretty useful, for private detectives, or cops, or, stalkers
-
-if you want better performance, consider the following:
-
-- a huge street view resource, better without downloading, my toy has taken care of image caching, in case you dont know
-- a GPU server maybe
-- distributed searching is also worth a shot
-
-## demo
+## Demo
 
 ```text
 $ .venv/bin/python img2location.py -q 天安门 -r 北京 -v
@@ -61,6 +54,5 @@ Matching address:
 0.31151291728019714: 北京市东城区东长安街天安门内
 ```
 
-## acknowledgement
-
+## Acknowledgement
 - [pochih/CBIR](https://github.com/pochih/CBIR)
